@@ -30,7 +30,7 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-mongoose.connect("mongodb://localhost:27017/userDB");
+mongoose.connect("mongodb+srv://admin:admin@cluster0.p73h5.mongodb.net/userDB");
 
 const userSchema = new mongoose.Schema ({
   email: String,
@@ -116,11 +116,13 @@ app.get("/auth/google",
   passport.authenticate('google', { scope: ["profile"] })
 );
 
+// views\register.ejs
+
 app.get("/auth/google/secrets",
-passport.authenticate('google', { failureRedirect: '/login' }),
+passport.authenticate('google', { failureRedirect:  '/login' }),
 function(req, res) {
   // Successful authentication, redirect home.
-  res.redirect('/secrets');
+  res.redirect("/secrets");
 });
 
 // app.get("/auth/facebook",
@@ -157,7 +159,7 @@ function(req, res) {
 app.get("/logout",function(req,res){
   req.logout();
   res.redirect("/");
-})
+});
 
 app.get("/submit", function(req, res){
   if (req.isAuthenticated()){
@@ -198,7 +200,7 @@ app.post("/register",(req,res)=>{
             res.redirect("/secrets");
           })
         }
-      })
+      });
 
   //   bcrypt.hash(req.body.password, saltRounds, function(err, hash) {
   //     const newUser = new User({
@@ -256,4 +258,4 @@ app.post("/login",(req,res)=>{
 
 app.listen(process.env.PORT || 3000,function(){
   console.log("server started running on port 3000");
-})
+});
