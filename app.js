@@ -14,8 +14,8 @@ const passport = require("passport");
 const passportLocalMongoose = require("passport-local-mongoose");
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const findOrCreate = require('mongoose-findorcreate');
-const FacebookStrategy = require("passport-facebook").Strategy;
-const InstagramStrategy = require("passport-instagram").Strategy;
+// const FacebookStrategy = require("passport-facebook").Strategy;
+// const InstagramStrategy = require("passport-instagram").Strategy;
 
 const app = express();
 
@@ -36,8 +36,8 @@ const userSchema = new mongoose.Schema ({
   email: String,
   password: String,
   googleId: String,
-  facebookId: String,
-  instagramId: String
+  // facebookId: String,
+  secret: String
 });
 
 userSchema.plugin(passportLocalMongoose);
@@ -75,29 +75,29 @@ passport.use(new GoogleStrategy({
   }
 ));
 
-passport.use(new FacebookStrategy({
-    clientID: process.env.APP_ID,
-    clientSecret: process.env.APP_SECRET,
-    callbackURL: "http://localhost:3000/auth/facebook/secrets"
-  },
-  function(accessToken, refreshToken, profile, cb) {
-    User.findOrCreate({ facebookId: profile.id }, function (err, user) {
-      return cb(err, user);
-    });
-  }
-));
+// passport.use(new FacebookStrategy({
+//     clientID: process.env.APP_ID,
+//     clientSecret: process.env.APP_SECRET,
+//     callbackURL: "http://localhost:3000/auth/facebook/secrets"
+//   },
+//   function(accessToken, refreshToken, profile, cb) {
+//     User.findOrCreate({ facebookId: profile.id }, function (err, user) {
+//       return cb(err, user);
+//     });
+//   }
+// ));
 
-passport.use(new InstagramStrategy({
-    clientID: process.env.INSTA_ID,
-    clientSecret: process.env.INSTA_SECRET,
-    callbackURL: "http://localhost:3000/auth/instagram/secrets"
-  },
-  function(accessToken, refreshToken, profile, done) {
-    User.findOrCreate({ instagramId: profile.id }, function (err, user) {
-      return done(err, user);
-    });
-  }
-));
+// passport.use(new InstagramStrategy({
+//     clientID: process.env.INSTA_ID,
+//     clientSecret: process.env.INSTA_SECRET,
+//     callbackURL: "http://localhost:3000/auth/instagram/secrets"
+//   },
+//   function(accessToken, refreshToken, profile, done) {
+//     User.findOrCreate({ instagramId: profile.id }, function (err, user) {
+//       return done(err, user);
+//     });
+//   }
+// ));
 
 
 app.get("/",(req,res)=>{
@@ -123,38 +123,69 @@ function(req, res) {
   res.redirect('/secrets');
 });
 
-app.get("/auth/facebook",
-  passport.authenticate('facebook', { scope: ["profile"] }));
+// app.get("/auth/facebook",
+//   passport.authenticate('facebook', { scope: ["profile"] }));
+//
+// app.get("/auth/facebook/secrets",
+//   passport.authenticate('facebook', { failureRedirect: '/login' }),
+//   function(req, res) {
+//     // Successful authentication, redirect home.
+//     res.redirect('/secrets');
+//   });
 
-app.get("/auth/facebook/secrets",
-  passport.authenticate('facebook', { failureRedirect: '/login' }),
-  function(req, res) {
-    // Successful authentication, redirect home.
-    res.redirect('/secrets');
+// app.get('/auth/instagram',
+//   passport.authenticate('instagram'));
+//
+// app.get('/auth/instagram/callback',
+//   passport.authenticate('instagram', { failureRedirect: '/login' }),
+//   function(req, res) {
+//     // Successful authentication, redirect home.
+//     res.redirect('/');
+//   });
+
+  app.get("/secrets", function(req, res){
+    User.find({"secret": {$ne: null}}, function(err, foundUsers){
+      if (err){
+        console.log(err);
+      } else {
+        if (foundUsers) {
+          res.render("secrets", {usersWithSecrets: foundUsers});
+        }
+      }
+    });
   });
-
-app.get('/auth/instagram',
-  passport.authenticate('instagram'));
-
-app.get('/auth/instagram/callback',
-  passport.authenticate('instagram', { failureRedirect: '/login' }),
-  function(req, res) {
-    // Successful authentication, redirect home.
-    res.redirect('/');
-  });
-
-app.get("/secrets",(req,res)=>{
-  if(req.isAuthenticated()){
-    res.render("secrets");
-  }else{
-    res.render("login");
-  }
-});
-
 app.get("/logout",function(req,res){
   req.logout();
   res.redirect("/");
 })
+
+app.get("/submit", function(req, res){
+  if (req.isAuthenticated()){
+    res.render("submit");
+  } else {
+    res.redirect("/login");
+  }
+});
+
+app.post("/submit", function(req, res){
+  const submittedSecret = req.body.secret;
+
+//Once the user is authenticated and their session gets saved, their user details are saved to req.user.
+  // console.log(req.user.id);
+
+  User.findById(req.user.id, function(err, foundUser){
+    if (err) {
+      console.log(err);
+    } else {
+      if (foundUser) {
+        foundUser.secret = submittedSecret;
+        foundUser.save(function(){
+          res.redirect("/secrets");
+        });
+      }
+    }
+  });
+});
 
 app.post("/register",(req,res)=>{
 
@@ -194,17 +225,11 @@ app.post("/login",(req,res)=>{
     if(err){
       console.log(err);
     }else{
-      passport.authenticate("local")(req,res,function(){
+      passport.authenticate("local",{ failureRedirect: '/login', failureMessage: true })(req,res,function(){
         res.redirect("/secrets");
       })
     }
-  })
-
-
-
-
-
-
+  });
 
 
   // below is used for bcrypt
