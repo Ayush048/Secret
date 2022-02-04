@@ -99,8 +99,11 @@ passport.use(new GoogleStrategy({
 //   }
 // ));
 
+// app.get("/",(req,res)=>{
+//   res.sendFile("C:\Users\AYUSH\Desktop\Web-Development\Secrets\index.html");
+// });
 
-app.get("/",(req,res)=>{
+app.get("/home",(req,res)=>{
   res.render("home");
 });
 
