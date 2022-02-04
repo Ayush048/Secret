@@ -103,7 +103,7 @@ passport.use(new GoogleStrategy({
 //   res.sendFile("C:\Users\AYUSH\Desktop\Web-Development\Secrets\index.html");
 // });
 
-app.get("/home",(req,res)=>{
+app.get("/",(req,res)=>{
   res.render("home");
 });
 
